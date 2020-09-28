@@ -3348,7 +3348,11 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                             candidate_buffer_ptr->candidate_ptr->ref_frame_type,
                             &mv_unit,
                             0,
+#if FIX_IFS_0
+                            candidate_buffer_ptr->candidate_ptr->motion_mode,
+#else
                             SIMPLE_TRANSLATION,
+#endif
                             0,
                             0,
                             candidate_buffer_ptr->candidate_ptr->compound_idx,
