@@ -77,8 +77,8 @@ extern "C" {
 #define REF_VS_NRF_1 0
 #define PD0_CUT_BYPASS 1
 /*****************NEW*******************/
-#define FIX_IFS_0 1
-#define FIX_IFS_1 1
+#define FIX_IFS_0 0
+#define FIX_IFS_1 0
 /*****************TF*******************/
 #define TF_CHROMA_BLIND 1
 #define TF_32x32_ONLY 0 ///***
