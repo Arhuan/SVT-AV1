@@ -72,7 +72,7 @@ extern "C" {
 #define PD0_CUT_4x4 0
 #define PD0_CUT_DEPTH 1
 #define PD0_CUT_BIS 0
-#define PD0_MD_EXIT 0
+#define PD0_MD_EXIT 1
 #define REF_VS_NRF_0 0
 #define REF_VS_NRF_1 0
 #define PD0_CUT_BYPASS 1
