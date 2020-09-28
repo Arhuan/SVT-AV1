@@ -76,6 +76,7 @@ extern "C" {
 #define REF_VS_NRF_0 0
 #define REF_VS_NRF_1 0
 #define PD0_CUT_BYPASS 1
+#define TEST_FAST_CAND 1
 /*****************NEW*******************/
 #define FIX_IFS_0 0
 #define FIX_IFS_1 0

@@ -8232,7 +8232,12 @@ void md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionContext *context_pt
     int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
     if (context_ptr->md_inter_intra_level && allow_ii)
         precompute_intra_pred_for_inter_intra(pcs_ptr, context_ptr);
-
+#if TEST_FAST_CAND
+    if(context_ptr->pd_pass == PD_PASS_0)
+    first_pass_generate_md_stage_0_cand(
+        context_ptr, &fast_candidate_total_count, pcs_ptr);
+    else
+#endif
     generate_md_stage_0_cand(
         context_ptr->sb_ptr, context_ptr, &fast_candidate_total_count, pcs_ptr);
 #if !PD0_C_OPT
