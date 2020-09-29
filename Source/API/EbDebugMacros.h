@@ -86,6 +86,7 @@ extern "C" {
 #define PARTIAL_FREQUENCY                        1 //Calculate partial frequency transforms N2 or N4
 #define TUNE_SC_QPS_IMP   1 // Improve QP assignment for SC
 #define FEATURE_REMOVE_CIRCULAR 1 // Remove circular actions from current NSQ feautres; replace them with non-circular levels
+#define TUNE_CDF 1 // Update CDF levels
 // END  svt-03 /////////////////////////////////////////////////////////
 
 //FOR DEBUGGING - Do not remove

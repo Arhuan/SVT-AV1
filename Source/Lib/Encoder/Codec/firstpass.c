@@ -2108,7 +2108,12 @@ EbErrorType first_pass_signal_derivation_mode_decision_config_kernel(
     context_ptr->adp_level = pcs_ptr->parent_pcs_ptr->enc_mode;
 
     // CDF
+#if TUNE_CDF
+    pcs_ptr->cdf_ctrl.enabled = pcs_ptr->cdf_ctrl.update_coef = 0;
+    pcs_ptr->cdf_ctrl.update_mv = pcs_ptr->cdf_ctrl.update_se = 0;
+#else
     pcs_ptr->update_cdf = 0;
+#endif
 
     // Filter INTRA
     // pic_filter_intra_level specifies whether filter intra would be active
