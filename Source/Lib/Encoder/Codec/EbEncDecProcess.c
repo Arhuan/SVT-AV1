@@ -2242,6 +2242,97 @@ void adaptive_md_cycles_redcution_controls(ModeDecisionContext *mdctxt, uint8_t 
     }
 }
 #endif
+#if TUNE_TX_TYPE_LEVELS
+void set_txt_controls(ModeDecisionContext *mdctxt, uint8_t txt_level) {
+
+    TxtControls * txt_ctrls = &mdctxt->txt_ctrls;
+
+    switch (txt_level)
+    {
+    case 0:
+        txt_ctrls->enabled = 0;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = 1;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = 1;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = 1;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = 1;
+
+        txt_ctrls->use_stats = 0;
+        txt_ctrls->intra_th = 0;
+        txt_ctrls->inter_th = 0;
+        break;
+    case 1:
+        txt_ctrls->enabled = 1;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->use_stats = 0;
+        txt_ctrls->intra_th = 0;
+        txt_ctrls->inter_th = 0;
+        break;
+    case 2:
+        txt_ctrls->enabled = 1;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->use_stats = 1;
+        txt_ctrls->intra_th = 5;
+        txt_ctrls->inter_th = 8;
+        break;
+    case 3:
+        txt_ctrls->enabled = 1;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = 5;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = 5;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->use_stats = 0;
+        txt_ctrls->intra_th = 0;
+        txt_ctrls->inter_th = 0;
+        break;
+    case 4:
+        txt_ctrls->enabled = 1;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = 5;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = 3;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = MAX_TX_TYPE_GROUP;
+
+        txt_ctrls->use_stats = 0;
+        txt_ctrls->intra_th = 0;
+        txt_ctrls->inter_th = 0;
+        break;
+    case 5:
+        txt_ctrls->enabled = 1;
+
+        txt_ctrls->txt_group_inter_lt_16x16 = 3;
+        txt_ctrls->txt_group_inter_gt_eq_16x16 = 2;
+
+        txt_ctrls->txt_group_intra_lt_16x16 = MAX_TX_TYPE_GROUP;
+        txt_ctrls->txt_group_intra_gt_eq_16x16 = 4;
+
+        txt_ctrls->use_stats = 0;
+        txt_ctrls->intra_th = 0;
+        txt_ctrls->inter_th = 0;
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+#else
 void set_txt_cycle_reduction_controls(ModeDecisionContext *mdctxt, uint8_t txt_cycles_red_mode) {
 
     TxtCycleRControls* txt_cycle_red_ctrls = &mdctxt->txt_cycles_red_ctrls;
@@ -2283,6 +2374,7 @@ void set_txt_cycle_reduction_controls(ModeDecisionContext *mdctxt, uint8_t txt_c
         break;
     }
 }
+#endif
 void set_txs_cycle_reduction_controls(ModeDecisionContext *mdctxt, uint8_t txs_cycles_red_mode) {
 
     TxsCycleRControls* txs_cycle_red_ctrls = &mdctxt->txs_cycles_red_ctrls;
@@ -2444,6 +2536,44 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->enable_area_based_cycles_allocation = 1;
     }
+
+#if TUNE_TX_TYPE_LEVELS
+    // TxT Groups - The different groups of transform types that can be searched
+    // Group #          Settings
+    // 1                DCT_DCT
+    // 2                DCT-DCT + V-DCT + H-DCT + ADST-ADST
+    // 3                DCT-DCT + V-DCT + H-DCT + ADST-ADST
+    // 4                DCT-DCT + V-DCT + H-DCT + ADST-ADST + DCT-ADST + ADST-DCT
+    // 5                DCT-DCT + V-DCT + H-DCT + ADST-ADST + DCT-ADST + ADST-DCT + FLIFADST-FLIPADST + IDTX
+    // 6                All Transform Types
+
+    // txt_level specifies the group of transform types to search over depending on block type/size.
+    // txt_level         Settings
+    // 0                 OFF (DCT_DCT only)
+    // 1                 FULL: Group 6 + Stats OFF
+    // 2                 Group 6 + Stats ON
+    // 3                 Inter: Group 5, All types for Intra + Stats OFF
+    // 4                 Inter: For block size >= 16x16 Group 3 else Group 5, Intra: All types, Stats OFF
+    // 5                 Inter: For block size >= 16x16 Group 2 else Group 3,
+    //                   Intra: For block size >= 16x16 Group 4 else All types,
+    //                   Stats OFF
+    uint8_t txt_level = 0;
+    if (pd_pass == PD_PASS_0)
+        txt_level = 0;
+    else if (pd_pass == PD_PASS_1)
+        txt_level = 0;
+    else
+        if (enc_mode <= ENC_M4)
+            txt_level = 1;
+        else if (enc_mode <= ENC_M5)
+            txt_level = 3;
+        else if (enc_mode <= ENC_M6)
+            txt_level = 4;
+        else
+            txt_level = 5;
+
+    set_txt_controls(context_ptr, txt_level);
+#else
     // Tx_search Level for Luma                       Settings
     // TX_SEARCH_DCT_DCT_ONLY                         DCT_DCT only
     // TX_SEARCH_DCT_TX_TYPES                         Tx search DCT type(s): DCT_DCT, V_DCT, H_DCT
@@ -2475,6 +2605,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             txt_cycles_reduction_level = 5;
     }
     set_txt_cycle_reduction_controls(context_ptr, txt_cycles_reduction_level);
+#endif
+
     if (pd_pass == PD_PASS_0)
         context_ptr->interpolation_search_level = IFS_OFF;
     else if (pd_pass == PD_PASS_1)
