@@ -146,8 +146,10 @@ static void apply_temporal_filter_planewise(
     const double n_decay                = (double)decay_control * (0.7 + log1p(sigma));
     const double n_decay_qr_inv         = 1.0 / (2 * n_decay * n_decay);
     const double block_balacne_inv      = 1.0 / (TF_WINDOW_BLOCK_BALANCE_WEIGHT + 1);
+#if !FIX_TF_REFACTOR
     const double distance_threshold_inv = 1.0 /
         (double)AOMMAX(context_ptr->min_frame_size * TF_SEARCH_DISTANCE_THRESHOLD, 1);
+#endif
 #else
     const float n_decay           = (float)decay_control * (0.7f + logf((float)sigma + 1.0f));
     const float n_decay_qr_inv    = 1.0f / (2 * n_decay * n_decay);
@@ -267,7 +269,7 @@ static void apply_temporal_filter_planewise(
             float combined_error =
                 (TF_WINDOW_BLOCK_BALANCE_WEIGHT * window_error + block_error) * block_balacne_inv;
 #endif
-
+#if !FIX_TF_REFACTOR
             // Decay factors for non-local mean approach.
             // Smaller q -> smaller filtering weight. WIP
             //  CLIP(pow((double)q_factor / TF_Q_DECAY_THRESHOLD, 2), 1e-5, 1);
@@ -275,6 +277,7 @@ static void apply_temporal_filter_planewise(
             // CLIP(
             //    pow((double)filter_strength / TF_STRENGTH_THRESHOLD, 2), 1e-5, 1);
             // Larger motion vector -> smaller filtering weight.
+
             MV mv;
             if (context_ptr->tf_32x32_block_split_flag[idx_32x32]) {
                 // 16x16
@@ -285,10 +288,22 @@ static void apply_temporal_filter_planewise(
                 mv.col = context_ptr->tf_32x32_mv_x[idx_32x32];
                 mv.row = context_ptr->tf_32x32_mv_y[idx_32x32];
             }
+#endif
 #if PR1485
+#if FIX_TF_REFACTOR
+            double d_factor;
+            if (context_ptr->tf_32x32_block_split_flag[idx_32x32]) {
+                // 16x16
+                d_factor = context_ptr->tf_16x16_d_factor[idx_32x32 * 4 + subblock_idx];
+            }
+            else {
+                //32x32
+                d_factor = context_ptr->tf_32x32_d_factor[idx_32x32];
+            }
+#else
             const float distance = sqrtf((float)(mv.row * mv.row + mv.col * mv.col));
             const double d_factor = AOMMAX(distance * distance_threshold_inv, 1);
-
+#endif
             // Compute filter weight.
             double scaled_diff     = AOMMIN(combined_error * d_factor * n_decay_qr_inv, 7);
             int    adjusted_weight = (int)(expf((float)(-scaled_diff)) * TF_WEIGHT_SCALE);
@@ -319,8 +334,11 @@ void svt_av1_apply_temporal_filter_planewise_avx2(
     assert(block_width % 16 == 0 && "block width must be multiple of 16");
     assert(block_height % 2 == 0 && "block height must be even");
     assert((ss_x == 0 || ss_x == 1) && (ss_y == 0 || ss_y == 1) && "invalid chroma subsampling");
-
+#if FEATURE_OPT_TF
+    const int num_planes = context_ptr->tf_chroma ? 3 : 1;
+#else
     const int num_planes = 3;
+#endif
     uint16_t luma_sq_error[SSE_STRIDE * BH];
     uint16_t chroma_sq_error[SSE_STRIDE * BH];
 
@@ -465,8 +483,10 @@ static void apply_temporal_filter_planewise_hbd(
     const double n_decay                = (double)decay_control * (0.7 + log1p((double)sigma));
     const double n_decay_qr_inv         = 1.0 / (2 * n_decay * n_decay);
     const double block_balacne_inv      = 1.0 / (TF_WINDOW_BLOCK_BALANCE_WEIGHT + 1);
+#if !FIX_TF_REFACTOR
     const double distance_threshold_inv = 1.0 /
         (double)AOMMAX(context_ptr->min_frame_size * TF_SEARCH_DISTANCE_THRESHOLD, 1);
+#endif
 #else
     const float n_decay           = (float)decay_control * (0.7f + logf((float)sigma + 1.0f));
     const float n_decay_qr_inv    = 1.0f / (2 * n_decay * n_decay);
@@ -581,7 +601,7 @@ static void apply_temporal_filter_planewise_hbd(
             float combined_error =
                 (TF_WINDOW_BLOCK_BALANCE_WEIGHT * window_error + block_error) * block_balacne_inv;
 #endif
-
+#if !FIX_TF_REFACTOR
             // Decay factors for non-local mean approach.
             // Smaller q -> smaller filtering weight. WIP
             //  CLIP(pow((double)q_factor / TF_Q_DECAY_THRESHOLD, 2), 1e-5, 1);
@@ -599,10 +619,22 @@ static void apply_temporal_filter_planewise_hbd(
                 mv.col = context_ptr->tf_32x32_mv_x[idx_32x32];
                 mv.row = context_ptr->tf_32x32_mv_y[idx_32x32];
             }
+#endif
 #if PR1485
+#if FIX_TF_REFACTOR
+            double d_factor;
+            if (context_ptr->tf_32x32_block_split_flag[idx_32x32]) {
+                // 16x16
+                d_factor = context_ptr->tf_16x16_d_factor[idx_32x32 * 4 + subblock_idx];
+            }
+            else {
+                //32x32
+                d_factor = context_ptr->tf_32x32_d_factor[idx_32x32];
+            }
+#else
             const float  distance = sqrtf((float)(mv.row * mv.row + mv.col * mv.col));
             const double d_factor = AOMMAX(distance * distance_threshold_inv, 1);
-
+#endif
             // Compute filter weight.
             double scaled_diff     = AOMMIN(combined_error * d_factor * n_decay_qr_inv, 7);
             int    adjusted_weight = (int)(expf((float)(-scaled_diff)) * TF_WEIGHT_SCALE);
@@ -634,8 +666,11 @@ void svt_av1_apply_temporal_filter_planewise_hbd_avx2(
     assert(block_width % 16 == 0 && "block width must be multiple of 16");
     assert(block_height % 2 == 0 && "block height must be even");
     assert((ss_x == 0 || ss_x == 1) && (ss_y == 0 || ss_y == 1) && "invalid chroma subsampling");
-
+#if FEATURE_OPT_TF
+    const int num_planes = context_ptr->tf_chroma ? 3 : 1;
+#else
     const int num_planes = 3;
+#endif
     uint32_t  luma_sq_error[SSE_STRIDE * BH];
     uint32_t  chroma_sq_error[SSE_STRIDE * BH];
 

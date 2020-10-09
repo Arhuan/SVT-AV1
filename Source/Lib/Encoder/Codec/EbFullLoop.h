@@ -16,7 +16,9 @@
 #include "EbCommonUtils.h"
 #include "EbInvTransforms.h"
 #include "EbTransforms.h"
-
+#if FEATURE_RDOQ_OPT
+#include "EbDefinitions.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,14 +49,20 @@ void inv_transform_recon_wrapper(uint8_t *pred_buffer, uint32_t pred_offset, uin
                                  int32_t *rec_coeff_buffer, uint32_t coeff_offset, EbBool hbd,
                                  TxSize txsize, TxType transform_type, PlaneType component_type,
                                  uint32_t eob);
-
+#if REFACTOR_MD_BLOCK_LOOP
+extern uint32_t d2_inter_depth_block_decision(SequenceControlSet* scs_ptr,
+                                              PictureControlSet* pcs_ptr,
+                                              ModeDecisionContext* context_ptr,
+                                              uint32_t blk_mds,
+                                              uint32_t sb_addr);
+#else
 extern uint32_t d2_inter_depth_block_decision(ModeDecisionContext *context_ptr, uint32_t blk_mds,
                                               SuperBlock *tb_ptr, uint32_t sb_addr,
                                               uint32_t tb_origin_x, uint32_t tb_origin_y,
                                               uint64_t                 full_lambda,
                                               MdRateEstimationContext *md_rate_estimation_ptr,
                                               PictureControlSet *      pcs_ptr);
-
+#endif
 // compute the cost of curr depth, and the depth above
 extern void compute_depth_costs_md_skip(ModeDecisionContext *context_ptr,
                                         SequenceControlSet *scs_ptr,
@@ -63,6 +71,23 @@ extern void compute_depth_costs_md_skip(ModeDecisionContext *context_ptr,
                                         uint32_t step, uint64_t *above_depth_cost,
                                         uint64_t *curr_depth_cost);
 uint64_t    d1_non_square_block_decision(ModeDecisionContext *context_ptr, uint32_t d1_block_itr);
+
+#if FEATURE_RDOQ_OPT
+static const int av1_get_tx_scale_tab[TX_SIZES_ALL] = {
+    0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 1, 2, 2, 0, 0, 0, 0, 1, 1};
+
+static const TxSize get_txsize_entropy_ctx_tab[TX_SIZES_ALL] = {
+    0, 1, 2, 3, 4, 1, 1, 2, 2, 3, 3, 4, 4, 1, 1, 2, 2, 3, 3};
+
+static const int get_txb_bwl_tab[TX_SIZES_ALL] = {
+    2, 3, 4, 5, 5, 2, 3, 3, 4, 4, 5, 5, 5, 2, 4, 3, 5, 4, 5};
+
+static const int get_txb_wide_tab[TX_SIZES_ALL] = {
+    4, 8, 16, 32, 32, 4, 8, 8, 16, 16, 32, 32, 32, 4, 16, 8, 32, 16, 32};
+
+static const int get_txb_high_tab[TX_SIZES_ALL] = {
+    4, 8, 16, 32, 32, 8, 4, 16, 8, 32, 16, 32, 32, 16, 4, 32, 8, 32, 16};
+#endif
 
 #ifdef __cplusplus
 }

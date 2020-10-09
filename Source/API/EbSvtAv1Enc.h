@@ -519,11 +519,11 @@ typedef struct EbSvtAv1EncConfiguration {
      * of the target bitrate. */
     uint32_t vbr_max_section_pct;
     /* under_shoot_pct indicates the tolerance of the VBR algorithm to undershoot
-     * and is used as a trigger threshold for more agressive adaptation of Q. Its
+     * and is used as a trigger threshold for more aggressive adaptation of Q. Its
      * value can range from 0-100. */
     uint32_t under_shoot_pct;
     /* over_shoot_pct indicates the tolerance of the VBR algorithm to overshoot
-     * and is used as a trigger threshold for more agressive adaptation of Q. Its
+     * and is used as a trigger threshold for more aggressive adaptation of Q. Its
      * value can range from 0-1000. */
     uint32_t over_shoot_pct;
 

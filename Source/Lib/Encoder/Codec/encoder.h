@@ -107,11 +107,11 @@ typedef struct {
   // min_cr / 100 indicates the target minimum compression ratio for each frame.
   unsigned int min_cr;
   // under_shoot_pct indicates the tolerance of the VBR algorithm to undershoot
-  // and is used as a trigger threshold for more agressive adaptation of Q. It's
+  // and is used as a trigger threshold for more aggressive adaptation of Q. It's
   // value can range from 0-100.
   int under_shoot_pct;
   // over_shoot_pct indicates the tolerance of the VBR algorithm to overshoot
-  // and is used as a trigger threshold for more agressive adaptation of Q. It's
+  // and is used as a trigger threshold for more aggressive adaptation of Q. It's
   // value can range from 0-1000.
   int over_shoot_pct;
   // Indicates the maximum qindex that can be used by the quantizer i.e. the

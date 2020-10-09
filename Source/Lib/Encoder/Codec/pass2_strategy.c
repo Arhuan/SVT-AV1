@@ -1262,7 +1262,7 @@ static void define_gf_group(PictureParentControlSet *pcs_ptr, FIRSTPASS_STATS *t
 
 #if GROUP_ADAPTIVE_MAXQ
   // Calculate an estimate of the maxq needed for the group.
-  // We are more agressive about correcting for sections
+  // We are more aggressive about correcting for sections
   // where there could be significant overshoot than for easier
   // sections where we do not wish to risk creating an overshoot
   // of the allocated bit budget.

@@ -242,6 +242,16 @@ typedef struct EbConfig {
      ****************************************/
     EbBool enable_global_motion;
 
+#if TUNE_CDEF_FILTER
+    /****************************************
+     * CDEF Level
+     * 0         OFF
+     * 1         FULL_SEARCH
+     * 2         CDEF_FAST_SEARCH_LVL1
+     * 3         CDEF_FAST_SEARCH_LVL2
+     * 4         CDEF_FAST_SEARCH_LVL3
+    ****************************************/
+#else
     /****************************************
      * CDEF Level
      * 0         OFF
@@ -251,6 +261,7 @@ typedef struct EbConfig {
      * 4         4 step refinement
      * 5         1 step refinement
     ****************************************/
+#endif
     int cdef_level;
 
     /****************************************

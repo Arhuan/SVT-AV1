@@ -297,6 +297,11 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
     handle_transform64x32 = handle_transform64x32_c;
     handle_transform64x64 = handle_transform64x64_c;
 #if PARTIAL_FREQUENCY
+    handle_transform16x64_N2_N4 = handle_transform16x64_N2_N4_c;
+    handle_transform32x64_N2_N4 = handle_transform32x64_N2_N4_c;
+    handle_transform64x16_N2_N4 = handle_transform64x16_N2_N4_c;
+    handle_transform64x32_N2_N4 = handle_transform64x32_N2_N4_c;
+    handle_transform64x64_N2_N4 = handle_transform64x64_N2_N4_c;
     eb_av1_fwd_txfm2d_16x8_N2 = eb_av1_fwd_txfm2d_16x8_N2_c;
     eb_av1_fwd_txfm2d_8x16_N2 = eb_av1_fwd_txfm2d_8x16_N2_c;
     eb_av1_fwd_txfm2d_16x4_N2 = eb_av1_fwd_txfm2d_16x4_N2_c;
@@ -351,10 +356,14 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
 
     search_one_dual = search_one_dual_c;
     sad_loop_kernel = sad_loop_kernel_c;
+#if !FIX_REMOVE_UNUSED_CODE
     svt_av1_apply_filtering = svt_av1_apply_filtering_c;
+#endif
     svt_av1_apply_temporal_filter_planewise = svt_av1_apply_temporal_filter_planewise_c;
     svt_av1_apply_temporal_filter_planewise_hbd = svt_av1_apply_temporal_filter_planewise_hbd_c;
+#if !FIX_REMOVE_UNUSED_CODE
     svt_av1_apply_filtering_highbd = svt_av1_apply_filtering_highbd_c;
+#endif
     ext_sad_calculation_8x8_16x16 = ext_sad_calculation_8x8_16x16_c;
     ext_sad_calculation_32x32_64x64 = ext_sad_calculation_32x32_64x64_c;
     ext_all_sad_calculation_8x8_16x16 = ext_all_sad_calculation_8x8_16x16_c;
@@ -618,6 +627,11 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
                     if (flags & HAS_AVX2) handle_transform64x32 = handle_transform64x32_avx2;
                     if (flags & HAS_AVX2) handle_transform64x64 = handle_transform64x64_avx2;
 #if PARTIAL_FREQUENCY
+                    if (flags & HAS_AVX2) handle_transform16x64_N2_N4 = handle_transform16x64_N2_N4_avx2;
+                    if (flags & HAS_AVX2) handle_transform32x64_N2_N4 = handle_transform32x64_N2_N4_avx2;
+                    if (flags & HAS_AVX2) handle_transform64x16_N2_N4 = handle_transform64x16_N2_N4_avx2;
+                    if (flags & HAS_AVX2) handle_transform64x32_N2_N4 = handle_transform64x32_N2_N4_avx2;
+                    if (flags & HAS_AVX2) handle_transform64x64_N2_N4 = handle_transform64x64_N2_N4_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_16x8_N2 = eb_av1_fwd_txfm2d_16x8_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_8x16_N2 = eb_av1_fwd_txfm2d_8x16_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_16x4_N2 = eb_av1_fwd_txfm2d_16x4_N2_avx2;
@@ -631,6 +645,14 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_16x16_N2 = eb_av1_fwd_txfm2d_16x16_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_32x64_N2 = eb_av1_fwd_txfm2d_32x64_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_64x32_N2 = eb_av1_fwd_txfm2d_64x32_N2_avx2;
+#ifndef NON_AVX512_SUPPORT
+                    if (flags & HAS_AVX512F) {
+                        eb_av1_fwd_txfm2d_32x32_N2 = av1_fwd_txfm2d_32x32_N2_avx512;
+                        eb_av1_fwd_txfm2d_32x64_N2 = av1_fwd_txfm2d_32x64_N2_avx512;
+                        eb_av1_fwd_txfm2d_64x32_N2 = av1_fwd_txfm2d_64x32_N2_avx512;
+                        eb_av1_fwd_txfm2d_64x64_N2 = av1_fwd_txfm2d_64x64_N2_avx512;
+                    }
+#endif
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_16x64_N2 = eb_av1_fwd_txfm2d_16x64_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_64x16_N2 = eb_av1_fwd_txfm2d_64x16_N2_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_32x16_N2 = eb_av1_fwd_txfm2d_32x16_N2_avx2;
@@ -656,6 +678,11 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_16x32_N4 = eb_av1_fwd_txfm2d_16x32_N4_avx2;
                     if (flags & HAS_AVX2) eb_av1_fwd_txfm2d_8x8_N4 = eb_av1_fwd_txfm2d_8x8_N4_avx2;
                     if (flags & HAS_SSE4_1) eb_av1_fwd_txfm2d_4x4_N4 = eb_av1_fwd_txfm2d_4x4_N4_sse4_1;
+#ifndef NON_AVX512_SUPPORT
+                    if (flags & HAS_AVX512F) {
+                        eb_av1_fwd_txfm2d_64x64_N4 = av1_fwd_txfm2d_64x64_N4_avx512;
+                    }
+#endif
 #endif/*ARTIAL_FREQUENCY*/
                     if (flags & HAS_SSE2) eb_aom_fft4x4_float = eb_aom_fft4x4_float_sse2;
                     if (flags & HAS_AVX2) eb_aom_fft16x16_float = eb_aom_fft16x16_float_avx2;
@@ -673,17 +700,21 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
                         sad_loop_kernel_sse4_1_intrin,
                         sad_loop_kernel_avx2_intrin,
                         sad_loop_kernel_avx512_intrin);
+#if !FIX_REMOVE_UNUSED_CODE
                     SET_SSE41(
                         svt_av1_apply_filtering, svt_av1_apply_filtering_c, svt_av1_apply_temporal_filter_sse4_1);
+#endif
                     SET_AVX2(svt_av1_apply_temporal_filter_planewise,
                         svt_av1_apply_temporal_filter_planewise_c,
                         svt_av1_apply_temporal_filter_planewise_avx2);
                     SET_AVX2(svt_av1_apply_temporal_filter_planewise_hbd,
                         svt_av1_apply_temporal_filter_planewise_hbd_c,
                         svt_av1_apply_temporal_filter_planewise_hbd_avx2);
+#if !FIX_REMOVE_UNUSED_CODE
                     SET_SSE41(svt_av1_apply_filtering_highbd,
                         svt_av1_apply_filtering_highbd_c,
                         svt_av1_highbd_apply_temporal_filter_sse4_1);
+#endif
                     SET_AVX2(ext_sad_calculation_8x8_16x16,
                         ext_sad_calculation_8x8_16x16_c,
                         ext_sad_calculation_8x8_16x16_avx2_intrin);

@@ -230,6 +230,23 @@ extern "C" {
     RTCD_EXTERN uint64_t(*handle_transform64x32)(int32_t *output);
     uint64_t handle_transform64x64_c(int32_t *output);
     RTCD_EXTERN uint64_t(*handle_transform64x64)(int32_t *output);
+#if PARTIAL_FREQUENCY
+    uint64_t handle_transform16x64_N2_N4_c(int32_t *output);
+    uint64_t handle_transform16x64_N2_N4_avx2(int32_t *output);
+    RTCD_EXTERN uint64_t(*handle_transform16x64_N2_N4)(int32_t *output);
+    uint64_t handle_transform32x64_N2_N4_c(int32_t *output);
+    uint64_t handle_transform32x64_N2_N4_avx2(int32_t *output);
+    RTCD_EXTERN uint64_t(*handle_transform32x64_N2_N4)(int32_t *output);
+    uint64_t handle_transform64x16_N2_N4_c(int32_t *output);
+    uint64_t handle_transform64x16_N2_N4_avx2(int32_t *output);
+    RTCD_EXTERN uint64_t(*handle_transform64x16_N2_N4)(int32_t *output);
+    uint64_t handle_transform64x32_N2_N4_c(int32_t *output);
+    uint64_t handle_transform64x32_N2_N4_avx2(int32_t *output);
+    RTCD_EXTERN uint64_t(*handle_transform64x32_N2_N4)(int32_t *output);
+    uint64_t handle_transform64x64_N2_N4_c(int32_t *output);
+    uint64_t handle_transform64x64_N2_N4_avx2(int32_t *output);
+    RTCD_EXTERN uint64_t(*handle_transform64x64_N2_N4)(int32_t *output);
+#endif /*PARTIAL_FREQUENCY*/
     uint64_t search_one_dual_c(int *lev0, int *lev1, int nb_strengths, uint64_t(**mse)[64], int sb_count, int start_gi, int end_gi);
     RTCD_EXTERN uint64_t(*search_one_dual)(int *lev0, int *lev1, int nb_strengths, uint64_t(**mse)[64], int sb_count, int start_gi, int end_gi);
     uint32_t eb_aom_mse16x16_c(const uint8_t *src_ptr, int32_t  source_stride, const uint8_t *ref_ptr, int32_t  recon_stride, uint32_t *sse);
@@ -763,6 +780,11 @@ extern "C" {
     void eb_av1_fwd_txfm2d_16x16_N4_avx2(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
     void eb_av1_fwd_txfm2d_8x8_N4_avx2(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
     void eb_av1_fwd_txfm2d_4x4_N4_sse4_1(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
+    void av1_fwd_txfm2d_32x32_N2_avx512(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
+    void av1_fwd_txfm2d_32x64_N2_avx512(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
+    void av1_fwd_txfm2d_64x32_N2_avx512(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
+    void av1_fwd_txfm2d_64x64_N2_avx512(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
+    void av1_fwd_txfm2d_64x64_N4_avx512(int16_t *input, int32_t *output, uint32_t input_stride, TxType transform_type, uint8_t  bit_depth);
 #endif /*PARTIAL_FREQUENCY*/
 
     void get_proj_subspace_avx2(const uint8_t *src8, int width, int height, int src_stride, const uint8_t *dat8, int dat_stride, int use_highbitdepth, int32_t *flt0, int flt0_stride, int32_t *flt1, int flt1_stride, int *xq, const SgrParamsType *params);
@@ -1156,7 +1178,7 @@ extern "C" {
     void av1_calc_indices_dim1_avx2(const int* data, const int* centroids, uint8_t* indices, int n, int k);
 
     void av1_calc_indices_dim2_avx2(const int* data, const int* centroids, uint8_t* indices, int n, int k);
-
+#if !FIX_REMOVE_UNUSED_CODE
     void svt_av1_apply_temporal_filter_sse4_1(
         const uint8_t *y_src, int y_src_stride, const uint8_t *y_pre, int y_pre_stride,
         const uint8_t *u_src, const uint8_t *v_src, int uv_src_stride, const uint8_t *u_pre,
@@ -1169,7 +1191,7 @@ extern "C" {
         const uint16_t *v_pre, int uv_pre_stride, unsigned int block_width, unsigned int block_height,
         int ss_x, int ss_y, int strength, const int *blk_fw, int use_whole_blk, uint32_t *y_accum,
         uint16_t *y_count, uint32_t *u_accum, uint16_t *u_count, uint32_t *v_accum, uint16_t *v_count);
-
+#endif
     void ext_sad_calculation_8x8_16x16_avx2_intrin(uint8_t *src, uint32_t src_stride, uint8_t *ref,
         uint32_t ref_stride, uint32_t *p_best_sad_8x8,
         uint32_t *p_best_sad_16x16, uint32_t *p_best_mv8x8,

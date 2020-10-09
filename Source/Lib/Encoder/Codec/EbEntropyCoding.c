@@ -22,7 +22,9 @@
 #include "EbCommonUtils.h"
 #include "EbAdaptiveMotionVectorPrediction.h"
 #include "EbLog.h"
-
+#if FEATURE_RDOQ_OPT
+#include "EbFullLoop.h"
+#endif
 #include "aom_dsp_rtcd.h"
 
 #define S32 32 * 32
@@ -560,9 +562,15 @@ int32_t av1_write_coeffs_txb_1d(PictureParentControlSet *parent_pcs_ptr,
     const ScanOrder *const scan_order = &av1_scan_orders[tx_size][tx_type];
     const int16_t *const   scan       = scan_order->scan;
     int32_t                c;
-    const int16_t          bwl    = (const uint16_t)get_txb_bwl(tx_size);
-    const uint16_t         width  = (const uint16_t)get_txb_wide(tx_size);
-    const uint16_t         height = (const uint16_t)get_txb_high(tx_size);
+#if FEATURE_RDOQ_OPT
+    const int16_t  bwl    = (const uint16_t)get_txb_bwl_tab[tx_size];
+    const uint16_t width  = (const uint16_t)get_txb_wide_tab[tx_size];
+    const uint16_t height = (const uint16_t)get_txb_high_tab[tx_size];
+#else
+    const int16_t  bwl    = (const uint16_t)get_txb_bwl(tx_size);
+    const uint16_t width  = (const uint16_t)get_txb_wide(tx_size);
+    const uint16_t height = (const uint16_t)get_txb_high(tx_size);
+#endif
 
     uint8_t        levels_buf[TX_PAD_2D];
     uint8_t *const levels = set_levels(levels_buf, width);

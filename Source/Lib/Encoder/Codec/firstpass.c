@@ -510,9 +510,10 @@ extern void first_pass_loop_core(PictureControlSet *pcs_ptr,
     memset(candidate_ptr->eob[0], 0, sizeof(uint16_t));
     memset(candidate_ptr->eob[1], 0, sizeof(uint16_t));
     memset(candidate_ptr->eob[2], 0, sizeof(uint16_t));
-
+#if !FIX_REMOVE_UNUSED_CODE
     candidate_ptr->chroma_distortion             = 0;
     candidate_ptr->chroma_distortion_inter_depth = 0;
+#endif
     // Set Skip Flag
     candidate_ptr->skip_flag = EB_FALSE;
     if (is_inter)
@@ -557,9 +558,10 @@ extern void first_pass_loop_core(PictureControlSet *pcs_ptr,
         end_tx_depth,
         &y_coeff_bits,
         &y_full_distortion[0]);
+#if !FIX_REMOVE_UNUSED_CODE
     candidate_ptr->chroma_distortion_inter_depth = 0;
     candidate_ptr->chroma_distortion             = 0;
-
+#endif
     candidate_ptr->block_has_coeff =
         (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff)
             ? EB_TRUE
@@ -909,25 +911,30 @@ extern EbErrorType first_pass_signal_derivation_block(
 
     // set compound_types_to_try
     set_inter_comp_controls(context_ptr, 0);
-
+#if !FEATURE_NEW_INTER_COMP_LEVELS
     context_ptr->compound_types_to_try = MD_COMP_AVG;
 
     // Do not add MD_COMP_WEDGE  beyond this point
     if (get_wedge_params_bits(context_ptr->blk_geom->bsize) == 0)
         context_ptr->compound_types_to_try = MIN(context_ptr->compound_types_to_try, MD_COMP_DIFF0);
+#endif
     context_ptr->inject_inter_candidates = 1;
 
     return return_error;
 }
 
 void product_coding_loop_init_fast_loop(ModeDecisionContext *context_ptr,
+#if !FIX_REMOVE_MD_SKIP_COEFF_CIRCUITERY
                                         NeighborArrayUnit *  skip_coeff_neighbor_array,
+#endif
                                         NeighborArrayUnit *  inter_pred_dir_neighbor_array,
                                         NeighborArrayUnit *  ref_frame_type_neighbor_array,
                                         NeighborArrayUnit *  intra_luma_mode_neighbor_array,
                                         NeighborArrayUnit *  skip_flag_neighbor_array,
                                         NeighborArrayUnit *  mode_type_neighbor_array,
+#if !TUNE_REMOVE_UNUSED_NEIG_ARRAY
                                         NeighborArrayUnit *  leaf_depth_neighbor_array,
+#endif
                                         NeighborArrayUnit *  leaf_partition_neighbor_array);
 void read_refine_me_mvs(PictureControlSet *pcs_ptr, ModeDecisionContext *context_ptr,
     EbPictureBufferDesc *input_picture_ptr, uint32_t input_origin_index,
@@ -1241,6 +1248,10 @@ EbErrorType first_pass_generate_md_stage_0_cand(
 //    }
 //#endif
     *candidate_total_count_ptr = cand_total_cnt;
+#if FIX_OPT_FAST_COST_INIT
+    for (uint32_t index = 0; index < MIN((*candidate_total_count_ptr + CAND_CLASS_TOTAL), MAX_NFL_BUFF_Y); ++index)
+        context_ptr->fast_cost_array[index] = MAX_CU_COST;
+#endif
     CandClass  cand_class_it;
     memset(context_ptr->md_stage_0_count, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
@@ -1305,8 +1316,12 @@ void distortion_based_modulator(ModeDecisionContext *context_ptr,
     EbPictureBufferDesc *recon_ptr, uint32_t blk_origin_index);
 
 extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionContext *context_ptr,
+#if REFACTOR_MD_BLOCK_LOOP
+                                       EbPictureBufferDesc *        input_picture_ptr) {
+#else
                                        EbPictureBufferDesc *        input_picture_ptr,
                                        ModeDecisionCandidateBuffer *bestcandidate_buffers[5]) {
+#endif
     ModeDecisionCandidateBuffer **candidate_buffer_ptr_array_base =
         context_ptr->candidate_buffer_ptr_array;
     ModeDecisionCandidateBuffer **candidate_buffer_ptr_array;
@@ -1315,7 +1330,9 @@ extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionC
     ModeDecisionCandidate *       fast_candidate_array = context_ptr->fast_candidate_array;
     uint32_t                      candidate_index;
     uint32_t                      fast_candidate_total_count;
+#if !FIX_REMOVE_UNUSED_CODE
     uint32_t                      best_intra_mode = EB_INTRA_MODE_INVALID;
+#endif
     const uint32_t                input_origin_index =
         (context_ptr->blk_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y +
         (context_ptr->blk_origin_x + input_picture_ptr->origin_x);
@@ -1332,13 +1349,17 @@ extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionC
     blk_ptr->av1xd->tile.mi_row_end   = context_ptr->sb_ptr->tile_info.mi_row_end;
 
     product_coding_loop_init_fast_loop(context_ptr,
+#if !FIX_REMOVE_MD_SKIP_COEFF_CIRCUITERY
                                        context_ptr->skip_coeff_neighbor_array,
+#endif
                                        context_ptr->inter_pred_dir_neighbor_array,
                                        context_ptr->ref_frame_type_neighbor_array,
                                        context_ptr->intra_luma_mode_neighbor_array,
                                        context_ptr->skip_flag_neighbor_array,
                                        context_ptr->mode_type_neighbor_array,
+#if !TUNE_REMOVE_UNUSED_NEIG_ARRAY
                                        context_ptr->leaf_depth_neighbor_array,
+#endif
                                        context_ptr->leaf_partition_neighbor_array);
 
     FrameHeader *frm_hdr = &pcs_ptr->parent_pcs_ptr->frm_hdr;
@@ -1447,6 +1468,14 @@ extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionC
     }
 
     // Full Mode Decision (choose the best mode)
+#if FIX_REMOVE_UNUSED_CODE
+    candidate_index = product_full_mode_decision(
+        context_ptr,
+        blk_ptr,
+        candidate_buffer_ptr_array,
+        1,
+        context_ptr->best_candidate_index_array);
+#else
     candidate_index = product_full_mode_decision(
         context_ptr,
         blk_ptr,
@@ -1454,9 +1483,11 @@ extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionC
         1,
         context_ptr->best_candidate_index_array,
         &best_intra_mode);
+#endif
     candidate_buffer = candidate_buffer_ptr_array[candidate_index];
-
+#if !REFACTOR_MD_BLOCK_LOOP
     bestcandidate_buffers[0] = candidate_buffer;
+#endif
     uint8_t sq_index         = eb_log2f(context_ptr->blk_geom->sq_size) - 2;
     if (context_ptr->blk_geom->shape == PART_N) {
         context_ptr->parent_sq_type[sq_index] = candidate_buffer->candidate_ptr->type;
@@ -1641,8 +1672,11 @@ extern void first_pass_md_encode_block(PictureControlSet *pcs_ptr, ModeDecisionC
     #endif
     context_ptr->md_local_blk_unit[blk_ptr->mds_idx].avail_blk_flag = EB_TRUE;
 }
-
+#if FEATURE_OPT_TF
+void set_tf_controls(PictureParentControlSet *pcs_ptr, uint8_t tf_level);
+#else
 void set_tf_controls(PictureDecisionContext *context_ptr, uint8_t tf_level);
+#endif
 /******************************************************
 * Derive Multi-Processes Settings for first pass
 Input   : encoder mode and tune
@@ -1776,7 +1810,11 @@ EbErrorType first_pass_signal_derivation_multi_processes(SequenceControlSet *   
 
 
     context_ptr->tf_level = 0;
+#if FEATURE_OPT_TF
+    set_tf_controls(pcs_ptr, context_ptr->tf_level);
+#else
     set_tf_controls(context_ptr, context_ptr->tf_level);
+#endif
     // MRP control
     // 0: OFF (1,1)  ; override features
     // 1: FULL (4,3) ; override features
@@ -1790,14 +1828,19 @@ EbErrorType first_pass_signal_derivation_multi_processes(SequenceControlSet *   
     // 9: (1,1) ; No-override features
     // Level 0 , 1  : set ref_list0_count_try and ref_list1_count_try and Override MRP-related features
     // Level 2 .. 9 : Only set ref_list0_count_try and ref_list1_count_try
-
+#if !FIX_TPL_TRAILING_FRAME_BUG
     pcs_ptr->tpl_opt_flag = 1;
+#endif
 #if ENABLE_TPL_TRAILING
     pcs_ptr->tpl_trailing_frame_count = 0;
 #endif
     return return_error;
 }
+#if TUNE_TX_TYPE_LEVELS
+void set_txt_controls(ModeDecisionContext *mdctxt, uint8_t txt_level);
+#else
 void set_txt_cycle_reduction_controls(ModeDecisionContext *mdctxt, uint8_t txt_cycles_red_mode);
+#endif
 void set_nsq_cycle_redcution_controls(ModeDecisionContext *mdctxt, uint16_t nsq_cycles_red_mode);
 void set_depth_cycle_redcution_controls(ModeDecisionContext *mdctxt, uint8_t depth_cycles_red_mode) ;
 void adaptive_md_cycles_redcution_controls(ModeDecisionContext *mdctxt, uint8_t adaptive_md_cycles_red_mode);
@@ -1805,6 +1848,9 @@ void set_obmc_controls(ModeDecisionContext *mdctxt, uint8_t obmc_mode) ;
 void set_txs_cycle_reduction_controls(ModeDecisionContext *mdctxt, uint8_t txs_cycles_red_mode);
 #if FEATURE_NIC_SCALING_PER_STAGE
 void set_nic_controls(ModeDecisionContext *mdctxt, uint8_t nic_scaling_level);
+#endif
+#if FEATURE_INTER_INTRA_LEVELS
+void set_inter_intra_ctrls(ModeDecisionContext* mdctxt, uint8_t inter_intra_level);
 #endif
 
 void coeff_based_switch_md_controls(ModeDecisionContext *mdctxt, uint8_t switch_md_mode_based_on_sq_coeff_level);
@@ -1833,6 +1879,11 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
     // 4                    TH 50%
     // 5                    TH 40%
     context_ptr->enable_area_based_cycles_allocation = 0;
+
+#if TUNE_TX_TYPE_LEVELS
+    context_ptr->md_staging_txt_level = 0;
+    set_txt_controls(context_ptr, 0);
+#else
     // Tx_search Level for Luma                       Settings
     // TX_SEARCH_DCT_DCT_ONLY                         DCT_DCT only
     // TX_SEARCH_DCT_TX_TYPES                         Tx search DCT type(s): DCT_DCT, V_DCT, H_DCT
@@ -1840,6 +1891,7 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
     context_ptr->tx_search_level = TX_SEARCH_DCT_DCT_ONLY;
     uint8_t txt_cycles_reduction_level = 0;
     set_txt_cycle_reduction_controls(context_ptr, txt_cycles_reduction_level);
+#endif
     context_ptr->interpolation_search_level = IFS_OFF;
     // Set Chroma Mode
     // Level                Settings
@@ -1915,7 +1967,7 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
     else
         context_ptr->md_staging_mode = MD_STAGING_MODE_1;
 
-
+#if !FIX_NIC_1_CLEAN_UP
     // Set md staging count level
     // Level 0              minimum count = 1
     // Level 1              set towards the best possible partitioning (to further optimize)
@@ -1929,7 +1981,7 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
     else {
         context_ptr->md_staging_count_level = 2;
     }
-
+#endif
     // Derive Spatial SSE Flag
     context_ptr->spatial_sse_full_loop_level = EB_TRUE;
 
@@ -2003,6 +2055,9 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
 
     // Set enable_inter_intra @ MD
     context_ptr->md_inter_intra_level = 0;
+#if FEATURE_INTER_INTRA_LEVELS
+    set_inter_intra_ctrls(context_ptr, context_ptr->md_inter_intra_level);
+#endif
 
     // Set enable_paeth @ MD
     context_ptr->md_enable_paeth = 0;
@@ -2024,7 +2079,11 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
 #endif
 
 #if FEATURE_NIC_SCALING_PER_STAGE
+#if FIX_NIC_1_CLEAN_UP
+    uint8_t nic_scaling_level = 13;
+#else
     uint8_t nic_scaling_level = 12;
+#endif
     set_nic_controls(context_ptr, nic_scaling_level);
 #else
     // Each NIC scaling level corresponds to a scaling factor, given by the below {x,y}
@@ -2090,7 +2149,9 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
 
     context_ptr->mds3_intra_prune_th = (uint16_t)~0;
     context_ptr->skip_cfl_cost_dev_th = (uint16_t)~0;
-
+#if FEATURE_MDS0_ELIMINATE_CAND
+    context_ptr->early_cand_elimination = 0;
+#endif
     return return_error;
 }
 /******************************************************
@@ -2098,17 +2159,26 @@ EbErrorType first_pass_signal_derivation_enc_dec_kernel(
 Input   : encoder mode and tune
 Output  : EncDec Kernel signal(s)
 ******************************************************/
+#if FIX_REMOVE_UNUSED_CODE
+EbErrorType first_pass_signal_derivation_mode_decision_config_kernel(
+    PictureControlSet *pcs_ptr) {
+#else
 EbErrorType first_pass_signal_derivation_mode_decision_config_kernel(
     PictureControlSet *pcs_ptr,
     ModeDecisionConfigurationContext *context_ptr) {
-
+#endif
     EbErrorType return_error = EB_ErrorNone;
-
+#if !FIX_REMOVE_UNUSED_CODE
     // ADP
     context_ptr->adp_level = pcs_ptr->parent_pcs_ptr->enc_mode;
-
+#endif
     // CDF
+#if TUNE_CDF
+    pcs_ptr->cdf_ctrl.enabled = pcs_ptr->cdf_ctrl.update_coef = 0;
+    pcs_ptr->cdf_ctrl.update_mv = pcs_ptr->cdf_ctrl.update_se = 0;
+#else
     pcs_ptr->update_cdf = 0;
+#endif
 
     // Filter INTRA
     // pic_filter_intra_level specifies whether filter intra would be active
@@ -2153,6 +2223,9 @@ void* set_me_hme_params_oq(
 void *set_me_hme_params_from_config(SequenceControlSet *scs_ptr, MeContext *me_context_ptr) ;
 void set_me_hme_ref_prune_ctrls(MeContext* context_ptr, uint8_t prune_level) ;
 void set_me_sr_adjustment_ctrls(MeContext* context_ptr, uint8_t sr_adjustment_level);
+#if FEATURE_GM_OPT
+void set_gm_controls(PictureParentControlSet *  pcs_ptr, uint8_t gm_level);
+#endif
 /******************************************************
 * Derive ME Settings for first pass
   Input   : encoder mode and tune
@@ -2189,9 +2262,12 @@ EbErrorType first_pass_signal_derivation_me_kernel(
 
     // ME Search Method
     context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
-
+#if FEATURE_GM_OPT // GmControls
+    uint8_t gm_level = 0;
+    set_gm_controls(pcs_ptr, gm_level);
+#else
     context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
-
+#endif
     // Set hme/me based reference pruning level (0-4)
     set_me_hme_ref_prune_ctrls(context_ptr->me_context_ptr, 0);
 

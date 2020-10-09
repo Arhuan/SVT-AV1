@@ -214,6 +214,15 @@ typedef struct MeshPattern {
     int interval;
 } MeshPattern;
 
+#if TUNE_CDF
+typedef struct CdfControls {
+    uint8_t  enabled;    //1 if mv, or se, or coeff is ON
+    uint8_t  update_mv;  //cdf update for mv
+    uint8_t  update_se;  //cdf update for various syntax elements
+    uint8_t  update_coef;//cdf update for coeffs
+} CdfControls;
+#endif
+
 typedef struct SpeedFeatures {
     // This allows us to use motion search at other sizes as a starting
     // point for this motion search and limits the search range around it.
@@ -311,7 +320,9 @@ typedef struct PictureControlSet {
     NeighborArrayUnit **md_mv_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_skip_flag_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_mode_type_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
+#if !TUNE_REMOVE_UNUSED_NEIG_ARRAY
     NeighborArrayUnit **md_leaf_depth_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
+#endif
     NeighborArrayUnit **md_luma_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_tx_depth_1_luma_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_tx_depth_2_luma_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
@@ -324,7 +335,9 @@ typedef struct PictureControlSet {
     NeighborArrayUnit **md_tx_depth_2_luma_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_cb_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit **md_cr_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
+#if !FIX_REMOVE_MD_SKIP_COEFF_CIRCUITERY
     NeighborArrayUnit **md_skip_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
+#endif
     NeighborArrayUnit **md_luma_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
     NeighborArrayUnit *
         *md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
@@ -344,7 +357,9 @@ typedef struct PictureControlSet {
     NeighborArrayUnit **ep_mv_neighbor_array;
     NeighborArrayUnit **ep_skip_flag_neighbor_array;
     NeighborArrayUnit **ep_mode_type_neighbor_array;
+#if !TUNE_REMOVE_UNUSED_NEIG_ARRAY
     NeighborArrayUnit **ep_leaf_depth_neighbor_array;
+#endif
     NeighborArrayUnit **ep_luma_recon_neighbor_array;
     NeighborArrayUnit **ep_cb_recon_neighbor_array;
     NeighborArrayUnit **ep_cr_recon_neighbor_array;
@@ -395,7 +410,11 @@ typedef struct PictureControlSet {
 
     FRAME_CONTEXT *                 ec_ctx_array;
     FRAME_CONTEXT                   md_frame_context;
+#if TUNE_CDF
+    CdfControls                     cdf_ctrl;
+#else
     uint8_t                         update_cdf;
+#endif
     FRAME_CONTEXT                   ref_frame_context[REF_FRAMES];
     EbWarpedMotionParams            ref_global_motion[TOTAL_REFS_PER_FRAME];
     struct MdRateEstimationContext *md_rate_estimation_array;
@@ -488,9 +507,31 @@ typedef struct {
     EbBool      ref_in_slide_window[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
     EbBool      is_used_as_reference_flag;
     EbDownScaledBufDescPtrArray tpl_ref_ds_ptr_array[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+#if FIX_TPL_TRAILING_FRAME_BUG
+    uint8_t       tpl_opt_flag;
+#endif
 } TPLData;
 #endif
-
+#if FEATURE_OPT_TF
+typedef struct  TfControls {
+    uint8_t enabled;
+    uint8_t window_size;                 // 3, 5, 7
+    uint8_t noise_based_window_adjust;   // add an offset to default window_size based on the noise level; higher the noise, smaller is the offset
+    uint8_t hp;                          // w/o 1/16 pel MV refinement 
+    uint8_t chroma;                      // use chroma
+#if FEATURE_OPT_TF
+    uint64_t block_32x32_16x16_th;       // control tf_16x16 using tf_32x32 pred error
+#endif
+}TfControls;
+#endif
+#if FEATURE_GM_OPT // GmControls
+typedef struct  GmControls {
+    uint8_t enabled;
+    uint8_t identiy_exit;       // 0: generate GM params for both list_0 and list_1, 1: do not generate GM params for list_1 if list_0/ref_idx_0 is id
+    uint8_t rotzoom_model_only; // 0: use both rotzoom and affine models, 1:use rotzoom model only
+    uint8_t bipred_only;        // 0: test both unipred and bipred, 1: test bipred only
+} GmControls;
+#endif
 //CHKN
 // Add the concept of PictureParentControlSet which is a subset of the old PictureControlSet.
 // It actually holds only high level Picture based control data:(GOP management,when to start a picture, when to release the PCS, ....).
@@ -671,7 +712,9 @@ typedef struct PictureParentControlSet {
     double       *tpl_rdmult_scaling_factors;
     double       *tpl_sb_rdmult_scaling_factors;
     EbBool       blk_lambda_tuning;
+#if !FIX_TPL_TRAILING_FRAME_BUG
     uint8_t       tpl_opt_flag;
+#endif
     // Dynamic GOP
     EbPred   pred_structure;
     uint8_t  hierarchical_levels;
@@ -741,10 +784,12 @@ typedef struct PictureParentControlSet {
     // Global quant matrix tables
     const QmVal *giqmatrix[NUM_QM_LEVELS][3][TX_SIZES_ALL];
     const QmVal *gqmatrix[NUM_QM_LEVELS][3][TX_SIZES_ALL];
+#if !FIX_OPTIMIZE_BUILD_QUANTIZER
     Quants quants_bd; // follows input bit depth
     Dequants deq_bd;  // follows input bit depth
     Quants quants_8bit;  // 8bit
     Dequants deq_8bit; // 8bit
+#endif
     int32_t      min_qmlevel;
     int32_t      max_qmlevel;
     // Encoder
@@ -800,9 +845,11 @@ typedef struct PictureParentControlSet {
     AomDenoiseAndModel *denoise_and_model;
     RestUnitSearchInfo *rusi_picture[3]; //for 3 planes
     int8_t              cdef_level;
+#if !TUNE_CDEF_FILTER
     int32_t             cdef_frame_strength;
     int32_t             cdf_ref_frame_strength;
     int32_t             use_ref_frame_cdef_strength;
+#endif
     uint8_t             palette_level;
     uint8_t             sc_content_detected;
     uint8_t             ibc_mode;
@@ -881,13 +928,25 @@ typedef struct PictureParentControlSet {
     uint8_t pd_window_count;
 #endif
 #if ENABLE_TPL_TRAILING
+    // For TPL, in addition to frames in the minigop size, we might process extra frames from the next minigop. These frames are
+    // called trailing frames. Trailing frames are available because of TF and their minigop is not determined yet. As a result,
+    // when used in RC there is a risk of race condition to access the PCS data. To prevent the problem, TplData should be used instead of PCS.
     uint8_t tpl_trailing_frame_count;
+#endif
+#if TUNE_TPL_TOWARD_CHROMA
+    // Tune TPL for better chroma.Only for 240P
+    uint8_t tune_tpl_for_chroma;
 #endif
 #if FIX_LAD_DEADLOCK
     uint8_t is_next_frame_intra;
 #endif
 #endif
-
+#if FEATURE_OPT_TF
+    TfControls tf_ctrls;
+#endif
+#if FEATURE_GM_OPT
+    GmControls gm_ctrls;
+#endif
 } PictureParentControlSet;
 
 typedef struct PictureControlSetInitData {
@@ -931,6 +990,9 @@ typedef struct PictureControlSetInitData {
     uint16_t  non_m8_pad_w;
     uint16_t  non_m8_pad_h;
     uint8_t enable_tpl_la;
+#if TUNE_TPL_OIS
+    uint8_t in_loop_ois;
+#endif
 
 } PictureControlSetInitData;
 
